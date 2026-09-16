@@ -311,12 +311,14 @@ function lagFeats(p,xs){let r=[];for(let i=p-1;i<xs.length;i++)r.push({idx:i,lag
 function diffs(d,xs){if(!d)return xs;let r=[];for(let i=1;i<xs.length;i++)r.push(xs[i]-xs[i-1]);return diffs(d-1,r);}
 function rollingStats(w,xs){let r=[];for(let i=0;i<=xs.length-w;i++){let win=xs.slice(i,i+w),mu=win.reduce((a,b)=>a+b,0)/w,sigma=sqrt(win.reduce((a,v)=>a+(v-mu)**2,0)/w);r.push([mu,sigma]);}return r;}
 function augmentPoints(p,d,w,xs){
-  let lags=lagFeats(p,xs),start=p-1,d1=diffs(1,xs),d2=diffs(2,xs),stats=rollingStats(w,xs),pts=[];
-  for(let k=0;k<lags.length;k++){
-    let {idx,lags:ls}=lags[k];
-    let ds=d===0?[]:d===1?[d1[start+k]]:[d1[start+k],d2[start+k]];
-    let [mu,sig]=stats[start+k-(w-1)];
-    pts.push({label:idx,vec:[...ls,...ds,mu,sig]});
+  let d1=diffs(1,xs),d2=diffs(2,xs),stats=rollingStats(w,xs),pts=[];
+  let start=Math.max(p-1,w-1);
+  for(let i=start;i<xs.length;i++){
+    let lags=xs.slice(i-p+1,i+1).reverse();
+    let ds=d===0?[]:d===1?[d1[i-1]]:[d1[i-1],d2[i-2]||0];
+    let st=stats[i-(w-1)];
+    if(!st)continue;
+    pts.push({label:i,vec:[...lags,...ds,st[0],st[1]]});
   }
   return pts;
 }
