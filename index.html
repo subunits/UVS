@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UVS · AI Stack Explorer</title>
+<meta name="description" content="Five Haskell repos unified: augmented vector spaces, Kähler geometry, ISCO geodesics, Myers-Perry black holes, and hyper-Kähler quaternions — interactive in one page.">
+<meta property="og:title" content="UVS · AI Stack Explorer">
+<meta property="og:description" content="Five Haskell repos unified: augmented vector spaces, Kähler geometry, ISCO geodesics, Myers-Perry black holes, and hyper-Kähler quaternions — interactive in one page.">
+<meta property="og:type" content="website">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --text-primary:#1a1a18;--text-secondary:#5f5e5a;--text-muted:#888780;
+  --surface-0:#f1efe8;--surface-1:#f8f7f2;--surface-2:#ffffff;
+  --border:#e0ded6;--border-strong:#c8c6be;--radius:8px;
+  --font-sans:system-ui,-apple-system,sans-serif;--font-mono:'Courier New',monospace;
+  --bg-accent:#e6f1fb;--text-accent:#185fa5;--text-danger:#a32d2d;
+}
+@media(prefers-color-scheme:dark){:root{
+  --text-primary:#e8e6df;--text-secondary:#a09e97;--text-muted:#666460;
+  --surface-0:#1e1e1c;--surface-1:#252522;--surface-2:#2e2e2b;
+  --border:#3a3a36;--border-strong:#4a4a46;
+  --bg-accent:#0c2d4a;--text-accent:#85b7eb;--text-danger:#f09595;
+}}
+body{font-family:var(--font-sans);color:var(--text-primary);background:var(--surface-0);min-height:100vh;padding:0}
+.page{max-width:900px;margin:0 auto;padding:2rem 1.5rem 4rem}
+h1{font-size:22px;font-weight:500;margin-bottom:6px}
+.subtitle{font-size:14px;color:var(--text-secondary);margin-bottom:1.5rem;line-height:1.6}
+.tabs{display:flex;gap:0;border-bottom:0.5px solid var(--border);margin-bottom:1.25rem;overflow-x:auto}
+.tab{padding:9px 15px;font-size:13px;color:var(--text-secondary);cursor:pointer;border:none;border-bottom:2px solid transparent;white-space:nowrap;background:none;font-family:var(--font-sans);transition:color .15s}
+.tab.active{color:var(--text-primary);border-bottom-color:var(--text-primary);font-weight:500}
+.tab:hover:not(.active){color:var(--text-primary)}
+.layer-badge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:9px;font-weight:500;margin-right:6px;vertical-align:middle}
+.l0{background:#EEEDFE;color:#3C3489}.l1{background:#E1F5EE;color:#0F6E56}
+.l2{background:#FAEEDA;color:#854F0B}.l3{background:#FAECE7;color:#993C1D}.l4{background:#FBEAF0;color:#993556}
+.card{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:10px}
+.card h3{font-size:15px;font-weight:500;margin-bottom:4px}
+.card p{font-size:13px;color:var(--text-secondary);line-height:1.6}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.metric{background:var(--surface-1);border-radius:var(--radius);padding:.75rem 1rem}
+.metric-label{font-size:12px;color:var(--text-secondary);margin-bottom:4px}
+.metric-val{font-size:20px;font-weight:500;font-family:var(--font-mono)}
+.input-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.input-row label{font-size:13px;color:var(--text-secondary);min-width:90px}
+input[type=range]{flex:1;min-width:80px;accent-color:var(--text-primary)}
+select,textarea{font-family:var(--font-sans);font-size:13px;padding:7px 10px;border:0.5px solid var(--border);border-radius:var(--radius);background:var(--surface-2);color:var(--text-primary)}
+select{flex:1}
+textarea{width:100%;min-height:80px;resize:vertical;font-family:var(--font-mono);padding:8px}
+.slider-val{font-size:13px;font-weight:500;min-width:40px;text-align:right}
+.btn{padding:8px 16px;font-size:13px;border:0.5px solid var(--border-strong);border-radius:var(--radius);cursor:pointer;background:transparent;color:var(--text-primary);font-family:var(--font-sans)}
+.btn:hover{background:var(--surface-1)}
+.btn.primary{background:var(--text-primary);color:var(--surface-2);border-color:var(--text-primary)}
+.btn.primary:hover{opacity:.88}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.output{font-family:var(--font-mono);font-size:12px;line-height:1.7;white-space:pre-wrap;word-break:break-all;color:var(--text-primary);background:var(--surface-1);border:0.5px solid var(--border);border-radius:var(--radius);padding:.75rem 1rem;max-height:380px;overflow-y:auto;min-height:48px;margin-top:10px}
+.stack-diagram{display:flex;flex-direction:column;gap:0}
+.stack-row{display:flex;align-items:stretch;cursor:pointer}
+.stack-cell{flex:1;padding:10px 12px;border:0.5px solid var(--border);border-top:none;font-size:13px;line-height:1.5}
+.stack-row:first-child .stack-cell{border-top:0.5px solid var(--border);border-radius:12px 12px 0 0}
+.stack-row:last-child .stack-cell{border-radius:0 0 12px 12px}
+.stack-cell.space{min-width:56px;text-align:center;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;border-right:none}
+.stack-cell.main{flex:3;border-left:none}
+.stack-cell.algo{flex:2;border-left:none;color:var(--text-secondary);font-size:12px}
+.stack-row.hl0 .stack-cell{background:#EEEDFE18}.stack-row.hl1 .stack-cell{background:#E1F5EE18}
+.stack-row.hl2 .stack-cell{background:#FAEEDA18}.stack-row.hl3 .stack-cell{background:#FAECE718}
+.stack-row.hl4 .stack-cell{background:#FBEAF018}
+.stack-row:hover .stack-cell{filter:brightness(.97)}
+.section-hdr{font-size:12px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;margin:1rem 0 .5rem}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;background:var(--surface-1);border:0.5px solid var(--border);color:var(--text-secondary);margin:2px}
+.err{color:var(--text-danger);font-size:12px;margin-top:4px}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--border-strong);border-top-color:var(--surface-2);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.api-note{font-size:12px;color:var(--text-muted);margin-top:8px;line-height:1.6}
+.api-note a{color:var(--text-accent)}
+.btn-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.download-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:1.5rem}
+.download-banner-left{display:flex;align-items:center;gap:12px}
+.download-icon{width:36px;height:36px;border-radius:50%;background:var(--surface-1);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.download-title{font-size:14px;font-weight:500;margin-bottom:2px}
+.download-desc{font-size:12px;color:var(--text-secondary)}
+.download-btn{padding:8px 18px;font-size:13px;font-weight:500;border:0.5px solid var(--border-strong);border-radius:var(--radius);cursor:pointer;background:var(--text-primary);color:var(--surface-2);font-family:var(--font-sans);white-space:nowrap;flex-shrink:0}
+.download-btn:hover{opacity:.88}
+@media(max-width:600px){.grid2,.grid3{grid-template-columns:1fr}.stack-cell.algo{display:none}.download-banner{flex-direction:column;align-items:flex-start}.download-btn{width:100%}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>UVS · AI stack explorer</h1>
+<p class="subtitle">Five Haskell repos consolidated into one interactive layer. Each tab is one level of the mathematical tower — probe it, run computations, and pipe results into the layer above.<br>
+Repos: <code>avsp</code> · <code>kahler-ts</code> · <code>kahler_isco</code> · <code>bh-phase-space</code> · <code>hyper-kahler-hs</code></p>
+
+<div class="tabs" id="tabs">
+  <button class="tab active" data-tab="overview">Stack overview</button>
+  <button class="tab" data-tab="avsp">Layer 0 · AVSP</button>
+  <button class="tab" data-tab="kahler">Layer 1 · Kähler</button>
+  <button class="tab" data-tab="isco">Layer 2 · ISCO</button>
+  <button class="tab" data-tab="bh">Layer 3 · BH physics</button>
+  <button class="tab" data-tab="hk">Layer 4 · Hyper-Kähler</button>
+  <button class="tab" data-tab="ai">AI probe ↗</button>
+</div>
+
+<!-- OVERVIEW -->
+<div id="tab-overview" class="tab-panel">
+  <div class="stack-diagram">
+    <div class="stack-row hl4" onclick="switchTab('hk')">
+      <div class="stack-cell space"><span class="layer-badge l4">ℍ^k</span></div>
+      <div class="stack-cell main"><strong>HyperKahler.hs</strong> — quaternion algebra, three symplectic forms ω_I/ω_J/ω_K, Killing-Yano correspondence</div>
+      <div class="stack-cell algo">Q = r + ti + θj + φk · Chern proxies cI/cJ/cK · VR homology in ℍ^k · spin fingerprinting</div>
+    </div>
+    <div class="stack-row hl3" onclick="switchTab('bh')">
+      <div class="stack-cell space"><span class="layer-badge l3">ℝ^d</span></div>
+      <div class="stack-cell main"><strong>bh-phase-space / Playground.hs</strong> — Myers-Perry horizons (d=5,6+), black rings, Gregory-Laflamme instability, ZAMOs</div>
+      <div class="stack-cell algo">Δ(r) bisection · ring equilibrium λ=2ν/(1+ν²) · k_GL=2π/r_H · Ω_ZAMO frame dragging</div>
+    </div>
+    <div class="stack-row hl2" onclick="switchTab('isco')">
+      <div class="stack-cell space"><span class="layer-badge l2">ℂ^k</span></div>
+      <div class="stack-cell main"><strong>kahler_isco.hs</strong> — Kähler layer applied to real ISCO geodesic coordinates (r, t, θ, φ)</div>
+      <div class="stack-cell algo">dω curvature on geodesic triples · Chern proxy per ISCO channel · VR filtration</div>
+    </div>
+    <div class="stack-row hl1" onclick="switchTab('kahler')">
+      <div class="stack-cell space"><span class="layer-badge l1">ℂ^k</span></div>
+      <div class="stack-cell main"><strong>kahler-ts / Main.hs</strong> — Kähler extension: complexify ℝⁿ → ℂ^(n/2), Hermitian metric H = g + iω</div>
+      <div class="stack-cell algo">Holomorphic kNN · symplectic matrix · Chern proxy Σω(p_i,p_j) · VR persistent H0/H1</div>
+    </div>
+    <div class="stack-row hl0" onclick="switchTab('avsp')">
+      <div class="stack-cell space"><span class="layer-badge l0">ℝⁿ</span></div>
+      <div class="stack-cell main"><strong>avsp / Main.hs</strong> — Augmented Vector Space: lag windows, derivatives, rolling stats over 6 signal types</div>
+      <div class="stack-cell algo">kNN (L2 + cosine) · OLS coord descent · Shannon entropy · anomaly detection · dist matrix</div>
+    </div>
+  </div>
+  <p style="font-size:12px;color:var(--text-muted);margin-top:8px">Click any row to open that layer's panel.</p>
+
+  <div class="section-hdr" style="margin-top:1.5rem">Mathematical tower</div>
+  <div class="grid3">
+    <div class="card"><h3>ℝⁿ → ℂ^(n/2)</h3><p>Pair consecutive lag components into complex numbers. Hermitian metric H = g + iω recovers original L2 as its real part.</p></div>
+    <div class="card"><h3>ℂ^(n/2) → ℍ^(n/4)</h3><p>Pack four scalar coordinates (r,t,θ,φ) into one quaternion. Three imaginary parts yield three independent symplectic forms.</p></div>
+    <div class="card"><h3>Killing-Yano</h3><p>ω_I, ω_J, ω_K match the three Killing-Yano tensors Ω_I, Ω_J, Ω_K of Myers-Perry geometry (Frolov-Kubiznak 2007).</p></div>
+  </div>
+  <div class="section-hdr">Signal roster</div>
+  <div class="grid2">
+    <div class="card"><h3>Synthetic</h3><p><span class="tag">sineWave</span><span class="tag">logisticMap (r=3.9)</span><span class="tag">lorenzWave</span><span class="tag">sawtoothWave</span><span class="tag">stepWave</span><span class="tag">randomWalk</span></p></div>
+    <div class="card"><h3>Geodesic</h3><p><span class="tag">ISCO-r</span><span class="tag">ISCO-t</span><span class="tag">ISCO-θ</span><span class="tag">ISCO-φ</span> — 60-point ISCO orbit in Schwarzschild-like coordinates.</p></div>
+  </div>
+</div>
+
+<!-- AVSP -->
+<div id="tab-avsp" class="tab-panel" style="display:none">
+  <div class="section-hdr">Augmented vector space (ℝⁿ)</div>
+  <div class="grid2" style="margin-bottom:1rem">
+    <div>
+      <div class="input-row"><label>Lag window</label><input type="range" min="2" max="8" value="3" id="lag" oninput="document.getElementById('lag-v').textContent=this.value"><span class="slider-val" id="lag-v">3</span></div>
+      <div class="input-row"><label>Deriv order</label><input type="range" min="0" max="2" value="1" id="deriv" oninput="document.getElementById('deriv-v').textContent=this.value"><span class="slider-val" id="deriv-v">1</span></div>
+      <div class="input-row"><label>Rolling win</label><input type="range" min="2" max="10" value="4" id="roll" oninput="document.getElementById('roll-v').textContent=this.value"><span class="slider-val" id="roll-v">4</span></div>
+      <div class="input-row"><label>Signal</label><select id="sig-sel"><option value="sine">sineWave</option><option value="logistic" selected>logisticMap</option><option value="lorenz">lorenzWave</option><option value="sawtooth">sawtoothWave</option><option value="step">stepWave</option><option value="walk">randomWalk</option></select></div>
+      <div class="input-row"><label>kNN metric</label><select id="metric-sel"><option value="l2">L2</option><option value="cosine">Cosine</option></select></div>
+    </div>
+    <div>
+      <div class="section-hdr" style="margin-top:0">Metrics</div>
+      <div class="grid2" style="gap:8px">
+        <div class="metric"><div class="metric-label">Entropy (bits)</div><div class="metric-val" id="m-ent">—</div></div>
+        <div class="metric"><div class="metric-label">Augmented dim</div><div class="metric-val" id="m-dim">—</div></div>
+        <div class="metric"><div class="metric-label">Points</div><div class="metric-val" id="m-pts">—</div></div>
+        <div class="metric"><div class="metric-label">Anomalies</div><div class="metric-val" id="m-ano">—</div></div>
+      </div>
+    </div>
+  </div>
+  <button class="btn primary" onclick="runAVSP()">Run augmentation</button>
+  <div class="output" id="avsp-out">Press "Run augmentation" to compute.</div>
+</div>
+
+<!-- KAHLER -->
+<div id="tab-kahler" class="tab-panel" style="display:none">
+  <div class="section-hdr">Kähler extension (ℂ^(n/2)) — H = g + iω</div>
+  <div class="grid2" style="margin-bottom:1rem">
+    <div>
+      <div class="input-row"><label>Signal</label><select id="k-sig"><option value="sine">sineWave</option><option value="logistic">logisticMap</option><option value="lorenz" selected>lorenzWave</option><option value="sawtooth">sawtoothWave</option><option value="step">stepWave</option><option value="walk">randomWalk</option></select></div>
+      <div class="input-row"><label>Lag window</label><input type="range" min="2" max="6" value="4" id="k-lag" oninput="document.getElementById('k-lag-v').textContent=this.value"><span class="slider-val" id="k-lag-v">4</span></div>
+    </div>
+    <div>
+      <div class="section-hdr" style="margin-top:0">Kähler metrics</div>
+      <div class="grid2" style="gap:8px">
+        <div class="metric"><div class="metric-label">Chern proxy</div><div class="metric-val" id="k-chern">—</div></div>
+        <div class="metric"><div class="metric-label">Max |dω|</div><div class="metric-val" id="k-curve">—</div></div>
+        <div class="metric"><div class="metric-label">Compat ✓</div><div class="metric-val" id="k-compat">—</div></div>
+        <div class="metric"><div class="metric-label">H0 (ε=max)</div><div class="metric-val" id="k-h0">1</div></div>
+      </div>
+    </div>
+  </div>
+  <button class="btn primary" onclick="runKahler()">Compute Kähler structure</button>
+  <div class="output" id="kahler-out">Press "Compute Kähler structure".</div>
+</div>
+
+<!-- ISCO -->
+<div id="tab-isco" class="tab-panel" style="display:none">
+  <div class="section-hdr">ISCO geodesic data in Kähler layer</div>
+  <div class="card" style="margin-bottom:1rem"><p>The ISCO signals (r, t, θ, φ) are 60-step geodesic coordinates of an innermost stable circular orbit in Schwarzschild geometry. This layer applies the Kähler analysis to each channel and compares curvature signatures.</p></div>
+  <div class="grid2" style="margin-bottom:1rem">
+    <div>
+      <div class="input-row"><label>Channel</label><select id="isco-ch"><option value="r" selected>ISCO-r (radial)</option><option value="t">ISCO-t (coordinate time)</option><option value="theta">ISCO-θ (polar)</option><option value="phi">ISCO-φ (azimuthal)</option></select></div>
+    </div>
+    <div class="grid2" style="gap:8px">
+      <div class="metric"><div class="metric-label">Chern proxy</div><div class="metric-val" id="i-chern">—</div></div>
+      <div class="metric"><div class="metric-label">Max |dω|</div><div class="metric-val" id="i-curve">—</div></div>
+    </div>
+  </div>
+  <button class="btn primary" onclick="runISCO()">Analyse ISCO channel</button>
+  <div class="output" id="isco-out">Press "Analyse ISCO channel".</div>
+</div>
+
+<!-- BH PHYSICS -->
+<div id="tab-bh" class="tab-panel" style="display:none">
+  <div class="section-hdr">Black hole physics (Myers-Perry, black rings, GL)</div>
+  <div class="grid2" style="margin-bottom:1rem">
+    <div>
+      <div class="input-row"><label>Dimension d</label><select id="bh-d"><option value="5" selected>d = 5</option><option value="6">d = 6</option><option value="7">d = 7</option></select></div>
+      <div class="input-row"><label>Mass M</label><input type="range" min="0.5" max="3" step="0.1" value="1" id="bh-m" oninput="document.getElementById('bh-m-v').textContent=parseFloat(this.value).toFixed(1)"><span class="slider-val" id="bh-m-v">1.0</span></div>
+      <div class="input-row"><label>Spin a</label><input type="range" min="0" max="1.5" step="0.05" value="0.5" id="bh-a" oninput="document.getElementById('bh-a-v').textContent=parseFloat(this.value).toFixed(2)"><span class="slider-val" id="bh-a-v">0.50</span></div>
+    </div>
+    <div>
+      <div class="section-hdr" style="margin-top:0">Horizon data</div>
+      <div class="grid2" style="gap:8px">
+        <div class="metric"><div class="metric-label">r_H</div><div class="metric-val" id="bh-rh">—</div></div>
+        <div class="metric"><div class="metric-label">μ (mass param)</div><div class="metric-val" id="bh-mu">—</div></div>
+        <div class="metric"><div class="metric-label">Ω_ZAMO (r_H)</div><div class="metric-val" id="bh-zamo">—</div></div>
+        <div class="metric"><div class="metric-label">GL unstable?</div><div class="metric-val" id="bh-gl">—</div></div>
+      </div>
+    </div>
+  </div>
+  <button class="btn primary" onclick="runBH()">Compute horizon</button>
+  <div class="output" id="bh-out">Press "Compute horizon".</div>
+</div>
+
+<!-- HYPER-KAHLER -->
+<div id="tab-hk" class="tab-panel" style="display:none">
+  <div class="section-hdr">Hyper-Kähler extension (ℍ^(n/4))</div>
+  <div class="card" style="margin-bottom:1rem"><p>Each ISCO time step (r,t,θ,φ) maps to one quaternion Q = r + ti + θj + φk natively. The three imaginary parts yield three symplectic forms corresponding to the three Killing-Yano tensors of Myers-Perry geometry.</p></div>
+  <div class="grid3" style="margin-bottom:1rem;gap:8px">
+    <div class="metric"><div class="metric-label">Chern I (radial KY)</div><div class="metric-val" id="hk-ci">—</div></div>
+    <div class="metric"><div class="metric-label">Chern J (polar KY)</div><div class="metric-val" id="hk-cj">—</div></div>
+    <div class="metric"><div class="metric-label">Chern K (azimuthal)</div><div class="metric-val" id="hk-ck">—</div></div>
+  </div>
+  <div class="input-row"><label>Dataset</label><select id="hk-ds"><option value="isco" selected>ISCO orbit (native Q)</option><option value="mp5">Myers-Perry d=5</option><option value="ring">Black ring</option><option value="mp6a">MP d=6 regime A (a1≫a2)</option><option value="mp6b">MP d=6 regime B (a1=a2)</option><option value="mp6c">MP d=6 regime C (a2=0)</option></select></div>
+  <button class="btn primary" onclick="runHK()">Run hyper-Kähler analysis</button>
+  <div class="output" id="hk-out">Press "Run hyper-Kähler analysis".</div>
+</div>
+
+<!-- AI PROBE -->
+<div id="tab-ai" class="tab-panel" style="display:none">
+  <div class="section-hdr">AI probe — ask Claude about any layer</div>
+  <div class="card" style="margin-bottom:1rem">
+    <p>Requires an <a href="https://console.anthropic.com/" target="_blank">Anthropic API key</a>. Enter it once below — it stays local to your browser session and is never sent anywhere except directly to api.anthropic.com.</p>
+  </div>
+  <div class="input-row" style="margin-bottom:12px">
+    <label>API key</label>
+    <input type="password" id="api-key" placeholder="sk-ant-..." style="flex:1;font-family:var(--font-mono)">
+  </div>
+  <textarea id="ai-q" placeholder="e.g. Why does the Chern proxy for the sine wave dominate other signals in the Kähler layer?&#10;e.g. Explain the Killing-Yano correspondence in the hyper-Kähler layer.&#10;e.g. What does H1 persistence tell us about the ISCO orbit topology?"></textarea>
+  <div class="err" id="ai-err" style="display:none"></div>
+  <div class="btn-row">
+    <button class="btn primary" onclick="runAI()" id="ai-btn">Ask Claude ↗</button>
+    <button class="btn" onclick="setQ('Why does the sine wave Chern proxy dominate all other signals in the Kähler layer?')">Example 1</button>
+    <button class="btn" onclick="setQ('Explain the relationship between ω_K and azimuthal ZAMO frame dragging in Myers-Perry.')">Example 2</button>
+    <button class="btn" onclick="setQ('What does the Gregory-Laflamme instability imply about black string phase transitions in the spin–area phase diagram?')">Example 3</button>
+  </div>
+  <p class="api-note">The key is used only for requests from this page. It is not stored to disk. Open source: view page source to verify.</p>
+  <div class="output" id="ai-out" style="min-height:80px">Enter your API key and a question to get started.</div>
+</div>
+
+</div><!-- /page -->
+
+<script>
+function switchTab(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===id));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.style.display=p.id==='tab-'+id?'':'none');
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
+function setQ(q){document.getElementById('ai-q').value=q;}
+
+const PI=Math.PI,sin=Math.sin,cos=Math.cos,sqrt=Math.sqrt,log=Math.log,abs=Math.abs;
+
+function sineWave(n){return Array.from({length:n},(_,t)=>sin(2*PI*t/20)*3);}
+function logisticMap(n){let x=0.5,r=[];for(let i=0;i<n;i++){r.push((x-0.5)*6);x=3.9*x*(1-x);}return r;}
+function lorenzWave(n){
+  let x=0.1,y=0,z=0,pts=[];
+  for(let i=0;i<1000+n*8;i++){
+    let dt=0.01,s=10,rho=28,beta=8/3;
+    [x,y,z]=[x+dt*s*(y-x),y+dt*(x*(rho-z)-y),z+dt*(x*y-beta*z)];
+    if(i>=1000&&(i-1000)%8===0)pts.push(x);
+  }
+  let mx=Math.max(...pts.map(abs));
+  return pts.slice(0,n).map(v=>v*(3/Math.max(mx,1e-9)));
+}
+function sawtoothWave(n){return Array.from({length:n},(_,t)=>(t%15)/15*4-2+sin(t*2.3)*0.4+sin(t*0.7)*0.3);}
+function uniformStream(seed,n){let s=seed,r=[];for(let i=0;i<n;i++){s=(s*1664525+1013904223)%(2**32);r.push(s/(2**32)-0.5);}return r;}
+function gaussStream(seed,n){let u=uniformStream(seed,n*2+2).map(v=>v+0.5),r=[];for(let i=0;i<n;i++)r.push(sqrt(-2*log(Math.max(u[2*i],1e-9)))*cos(2*PI*u[2*i+1])*0.6);return r;}
+function stepWave(n){let steps=Array.from({length:n},(_,t)=>t<20?1:t<40?-1:2);let noise=gaussStream(42,n);return steps.map((v,i)=>v+noise[i]);}
+function randomWalk(n){let u=uniformStream(12345,n).map(v=>v*0.8),r=[0];for(let i=1;i<n;i++)r.push(r[i-1]+u[i]);return r.slice(0,n);}
+function getSignal(s){const m={sine:sineWave,logistic:logisticMap,lorenz:lorenzWave,sawtooth:sawtoothWave,step:stepWave,walk:randomWalk};return(m[s]||logisticMap)(60);}
+function shannonEntropy(xs){
+  if(!xs.length)return 0;
+  let n=xs.length,bins=Math.max(4,Math.round(sqrt(n)));
+  let mn=Math.min(...xs),mx=Math.max(...xs),rng=Math.max(mx-mn,1e-9);
+  let counts=new Array(bins).fill(0);
+  xs.forEach(v=>{let i=Math.min(bins-1,Math.floor((v-mn)/rng*bins));counts[i]++;});
+  return -counts.reduce((s,c)=>{let p=c/n;return s+(p>0?p*Math.log2(p):0);},0);
+}
+function lagFeats(p,xs){let r=[];for(let i=p-1;i<xs.length;i++)r.push({idx:i,lags:xs.slice(i-p+1,i+1).reverse()});return r;}
+function diffs(d,xs){if(!d)return xs;let r=[];for(let i=1;i<xs.length;i++)r.push(xs[i]-xs[i-1]);return diffs(d-1,r);}
+function rollingStats(w,xs){let r=[];for(let i=0;i<=xs.length-w;i++){let win=xs.slice(i,i+w),mu=win.reduce((a,b)=>a+b,0)/w,sigma=sqrt(win.reduce((a,v)=>a+(v-mu)**2,0)/w);r.push([mu,sigma]);}return r;}
+function augmentPoints(p,d,w,xs){
+  let lags=lagFeats(p,xs),start=p-1,d1=diffs(1,xs),d2=diffs(2,xs),stats=rollingStats(w,xs),pts=[];
+  for(let k=0;k<lags.length;k++){
+    let {idx,lags:ls}=lags[k];
+    let ds=d===0?[]:d===1?[d1[start+k]]:[d1[start+k],d2[start+k]];
+    let [mu,sig]=stats[start+k-(w-1)];
+    pts.push({label:idx,vec:[...ls,...ds,mu,sig]});
+  }
+  return pts;
+}
+function l2(a,b){return sqrt(a.reduce((s,v,i)=>s+(v-b[i])**2,0));}
+function cosineD(a,b){let dot=a.reduce((s,v,i)=>s+v*b[i],0),na=sqrt(a.reduce((s,v)=>s+v*v,0)),nb=sqrt(b.reduce((s,v)=>s+v*v,0));return na*nb<1e-12?1:1-dot/(na*nb);}
+function kNN(pts,q,k,metric){return pts.filter(p=>p.label!==q.label).map(p=>({p,d:(metric==='cosine'?cosineD:l2)(q.vec,p.vec)})).sort((a,b)=>a.d-b.d).slice(0,k);}
+function detectAnomalies(pts,metric,k=5,thresh=2.0){
+  let scored=pts.map(p=>{let ns=kNN(pts,p,k,metric);return{p,d:ns.reduce((s,n)=>s+n.d,0)/Math.max(ns.length,1)};});
+  let gm=scored.reduce((s,v)=>s+v.d,0)/scored.length;
+  return scored.filter(v=>v.d>thresh*gm);
+}
+function runAVSP(){
+  let p=+document.getElementById('lag').value,d=+document.getElementById('deriv').value,w=+document.getElementById('roll').value;
+  let sig=document.getElementById('sig-sel').value,metric=document.getElementById('metric-sel').value;
+  let xs=getSignal(sig),pts=augmentPoints(p,d,w,xs);
+  let ent=shannonEntropy(xs).toFixed(3),dim=pts[0]?.vec.length||0;
+  document.getElementById('m-ent').textContent=ent;
+  document.getElementById('m-dim').textContent=dim;
+  document.getElementById('m-pts').textContent=pts.length;
+  let anos=detectAnomalies(pts,metric);
+  document.getElementById('m-ano').textContent=anos.length;
+  let q=pts.find(p=>p.label===10)||pts[0],nbs=q?kNN(pts,q,5,metric):[];
+  document.getElementById('avsp-out').textContent=[
+    `Signal: ${sig} · ${pts.length} augmented points · dim=${dim}`,`Entropy: ${ent} bits`,``,
+    `5-NN of t=10 (${metric}):`,
+    ...nbs.map(n=>`  t=${String(n.p.label).padEnd(4)} dist=${n.d.toFixed(5)}`),``,
+    `Anomalies (threshold 2× mean kNN dist):`,
+    anos.length?anos.map(a=>`  t=${a.p.label} mean-kNN=${a.d.toFixed(4)}`).join('\n'):'  None detected.',``,
+    `Vec sample (t=10): [${(q?.vec||[]).slice(0,6).map(v=>v.toFixed(3)).join(', ')}${dim>6?', …]':']'}`
+  ].join('\n');
+}
+
+function complexify(lags,rest){let cv=[];for(let i=0;i<lags.length;i+=2)cv.push({r:lags[i],im:lags[i+1]||0});rest.forEach(v=>cv.push({r:v,im:0}));return cv;}
+function cadd(a,b){return{r:a.r+b.r,im:a.im+b.im};}
+function csub(a,b){return{r:a.r-b.r,im:a.im-b.im};}
+function cmul(a,b){return{r:a.r*b.r-a.im*b.im,im:a.r*b.im+a.im*b.r};}
+function cconj(a){return{r:a.r,im:-a.im};}
+function cabs(a){return sqrt(a.r*a.r+a.im*a.im);}
+function herm(u,v){return u.reduce((s,a,i)=>cadd(s,cmul(cconj(a),v[i])),{r:0,im:0});}
+function riem(u,v){return herm(u,v).r;}
+function symp(u,v){return herm(u,v).im;}
+function holoDist(p,q){return sqrt(p.cv.reduce((s,a,i)=>s+cabs(csub(a,q.cv[i]))**2,0));}
+function complexJ(v){return v.map(({r,im})=>({r:-im,im:r}));}
+function makeKahlerPts(p,w,xs){
+  return augmentPoints(p,1,w,xs).map(pt=>{let lags=pt.vec.slice(0,p),rest=pt.vec.slice(p);return{label:pt.label,vec:pt.vec,cv:complexify(lags,rest)};});
+}
+function chernProxy(pts){let s=0,n=pts.length;for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)s+=symp(pts[i].cv,pts[j].cv);return s;}
+function omegaCurvature(p,q,r){
+  const s=(a,b)=>a.map((v,i)=>csub(v,b[i]));
+  let qp=s(q,p),rp=s(r,p),rq=s(r,q),pq=s(p,q),pr=s(p,r),qr=s(q,r);
+  return symp(qp,rp)+symp(rq,pq)+symp(pr,qr);
+}
+function checkCompat(u,v){return abs(symp(u,v)-riem(complexJ(u),v))<1e-10;}
+function runKahler(){
+  let p=+document.getElementById('k-lag').value,w=4,sig=document.getElementById('k-sig').value;
+  let xs=getSignal(sig),pts=makeKahlerPts(p,w,xs);
+  let cp=chernProxy(pts).toFixed(3);
+  document.getElementById('k-chern').textContent=cp;
+  let curvs=[];for(let i=0;i<pts.length-2;i++)curvs.push(abs(omegaCurvature(pts[i].cv,pts[i+1].cv,pts[i+2].cv)));
+  document.getElementById('k-curve').textContent=Math.max(...curvs).toFixed(4);
+  let compatCount=0,total=Math.min(8,pts.length-1);
+  for(let i=0;i<total;i++)if(checkCompat(pts[i].cv,pts[i+1].cv))compatCount++;
+  document.getElementById('k-compat').textContent=`${compatCount}/${total}`;
+  let q=pts.find(p=>p.label===10)||pts[0];
+  let nbs=q?pts.filter(p=>p.label!==q.label).map(p=>({p,d:holoDist(q,p)})).sort((a,b)=>a.d-b.d).slice(0,5):[];
+  document.getElementById('kahler-out').textContent=[
+    `Kähler layer · signal=${sig} · lag=${p}`,``,
+    `H(u,v) = g(u,v) + iω(u,v)`,`  g = Re H  (Riemannian, recovers L2)`,`  ω = Im H  (symplectic form)`,``,
+    `Chern proxy Σᵢ<ⱼ ω(pᵢ,pⱼ) = ${cp}`,
+    `Max |dω| over triples = ${document.getElementById('k-curve').textContent}`,
+    `J²=-I compatible pairs: ${compatCount}/${total}`,``,
+    `Holomorphic 5-NN of t=10:`,
+    ...nbs.map(n=>`  t=${String(n.p.label).padEnd(4)} Hermitian dist=${n.d.toFixed(5)}`),
+  ].join('\n');
+}
+
+const ISCO_R=[-2.2e-05,0.469324,0.927044,1.361952,1.763352,2.121341,2.427033,2.673001,2.853188,2.963087,3.0,2.963087,2.853188,2.673001,2.427033,2.121341,1.763352,1.361952,0.927044,0.469324,-2.2e-05,-0.469324,-0.927044,-1.361952,-1.763352,-2.121341,-2.427077,-2.673045,-2.853188,-2.963087,-3.0,-2.963087,-2.853188,-2.673045,-2.427077,-2.121341,-1.763352,-1.361952,-0.927044,-0.469324,-2.2e-05,0.469324,0.927044,1.361952,1.763352,2.121341,2.427033,2.673001,2.853188,2.963087,3.0,2.963087,2.853188,2.673001,2.427033,2.121341,1.763352,1.361952,0.927044,0.469324];
+const ISCO_T=[-3.0,-2.979933,-2.959866,-2.939799,-2.919732,-2.899666,-2.879599,-2.859532,-2.839465,-2.819398,-2.799331,-2.779264,-2.759197,-2.73913,-2.719064,-2.698997,-2.67893,-2.658863,-2.638796,-2.618729,-2.598662,-2.578595,-2.558528,-2.538462,-2.518395,-2.498328,-2.478261,-2.458194,-2.438127,-2.41806,-2.397993,-2.377926,-2.35786,-2.337793,-2.317726,-2.297659,-2.277592,-2.257525,-2.237458,-2.217391,-2.197324,-2.177258,-2.157191,-2.137124,-2.117057,-2.09699,-2.076923,-2.056856,-2.036789,-2.016722,-1.996656,-1.976589,-1.956522,-1.936455,-1.916388,-1.896321,-1.876254,-1.856187,-1.83612,-1.816054];
+const ISCO_THETA=[0.0,0.342137,0.679872,1.008603,1.32433,1.622649,1.89996,2.152261,2.376751,2.570228,2.730092,2.854342,2.941577,2.990196,3.0,2.970788,2.902761,2.796719,2.654462,2.477391,2.268307,2.029412,1.764106,1.47579,1.168267,0.845538,0.511805,0.171469,-0.171269,-0.511805,-0.845538,-1.168267,-1.47579,-1.763906,-2.029212,-2.268107,-2.477391,-2.654262,-2.796719,-2.902561,-2.970588,-3.0,-2.990196,-2.941377,-2.854342,-2.729892,-2.570028,-2.376551,-2.152261,-1.89976,-1.622449,-1.32413,-1.008403,-0.679672,-0.342137,0.0,0.342137,0.679872,1.008603,1.32433];
+const ISCO_PHI=[-3.0,-2.868523,-2.737046,-2.605569,-2.474092,-2.342615,-2.211137,-2.079661,-1.948184,-1.816707,-1.685229,-1.553753,-1.422276,-1.290799,-1.159321,-1.027845,-0.896368,-0.764891,-0.633413,-0.501937,-0.37046,-0.238983,-0.107505,0.023971,0.155448,0.286925,0.418403,0.549879,0.681356,0.812833,0.944311,1.075788,1.207264,1.338741,1.470219,1.601696,1.733172,1.86465,1.996127,2.127604,2.25908,2.390558,2.522035,2.653512,2.784988,2.916466,-2.972155,-2.840679,-2.709201,-2.577724,-2.446247,-2.314771,-2.183293,-2.051816,-1.920339,-1.788863,-1.657385,-1.525908,-1.394431,-1.262954];
+
+function runISCO(){
+  const chMap={r:ISCO_R,t:ISCO_T,theta:ISCO_THETA,phi:ISCO_PHI};
+  let ch=document.getElementById('isco-ch').value,xs=chMap[ch];
+  let pts=makeKahlerPts(4,4,xs),cp=chernProxy(pts).toFixed(3);
+  document.getElementById('i-chern').textContent=cp;
+  let curvs=[];for(let i=0;i<pts.length-2;i++)curvs.push(abs(omegaCurvature(pts[i].cv,pts[i+1].cv,pts[i+2].cv)));
+  document.getElementById('i-curve').textContent=Math.max(...curvs).toFixed(4);
+  let chLabel={r:'radial',t:'coord time',theta:'polar',phi:'azimuthal'};
+  document.getElementById('isco-out').textContent=[
+    `ISCO geodesic channel: ${chLabel[ch]}`,`60 coordinate samples · Schwarzschild ISCO orbit`,``,
+    `Shannon entropy: ${shannonEntropy(xs).toFixed(3)} bits`,
+    `Chern proxy: ${cp}`,``,
+    `Kähler analysis (lag=4, deriv=1, rollWin=4):`,
+    `  dω ≠ 0 → geodesic manifold is curved inside ℂ^k`,
+    `  This curvature corresponds to the Killing-Yano structure`,
+    `  of the background Schwarzschild metric.`,``,
+    `First 10 augmented vectors:`,
+    ...pts.slice(0,10).map(p=>`  t=${String(p.label).padEnd(3)} vec₀=${p.vec[0].toFixed(4)}  |cv₀|=${Math.sqrt(p.cv[0].r**2+p.cv[0].im**2).toFixed(4)}`),
+  ].join('\n');
+}
+
+function sphereArea(n){
+  function gammaH(k){if(k%2===1){let g=1;for(let i=1;i<=(k+1)/2-1;i++)g*=i;return g;}else{let h=k/2,g=1;for(let i=1;i<=2*h;i++)g*=i;let hp=1;for(let i=1;i<=h;i++)hp*=i;return g*sqrt(PI)/(4**h*hp);}}
+  return 2*PI**((n+1)/2)/gammaH(n);
+}
+function massParam(d,M){return 16*PI*M/((d-2)*sphereArea(d-2));}
+function deltaMP(d,mu,a,r){return r*r+a*a-mu/r**(d-5);}
+function bisect(f,lo,hi,tol=1e-8){if(f(lo)*f(hi)>0)return null;let mid;for(let i=0;i<80;i++){mid=(lo+hi)/2;if(f(lo)*f(mid)<=0)hi=mid;else lo=mid;if(hi-lo<tol)break;}return mid;}
+function horizonMP(d,mu,a){if(d===5){return a*a>mu?null:sqrt(mu-a*a);}return bisect(r=>deltaMP(d,mu,a,r),1e-9,10*(mu**(1/(d-3))+a+1));}
+function areaMP(d,rH,a){return rH**(d-4)*(rH*rH+a*a)*sphereArea(d-2);}
+function zamoOmega(d,mu,a,r){let rp=r**(d-5),sig=r*r+a*a,gtphi=-(mu*a)/(rp*sig),gpp=(r*r+a*a)+mu*a*a/(rp*sig);return -gtphi/gpp;}
+function runBH(){
+  let d=+document.getElementById('bh-d').value,M=+document.getElementById('bh-m').value,a=+document.getElementById('bh-a').value;
+  let mu=massParam(d,M),rH=horizonMP(d,mu,a);
+  document.getElementById('bh-mu').textContent=mu.toFixed(4);
+  if(rH===null){
+    ['bh-rh','bh-zamo','bh-gl'].forEach(id=>document.getElementById(id).textContent='—');
+    document.getElementById('bh-out').textContent=`d=${d}, M=${M}, a=${a}\nKerr bound violated — no horizon for a²=${(a*a).toFixed(4)} > μ=${mu.toFixed(4)}`;
+    return;
+  }
+  let aH=areaMP(d,rH,a),zamo=zamoOmega(d,mu,a,rH),kGL=2*PI/rH;
+  document.getElementById('bh-rh').textContent=rH.toFixed(4);
+  document.getElementById('bh-zamo').textContent=zamo.toFixed(4);
+  document.getElementById('bh-gl').textContent=rH*1.5>rH?'Yes':'No';
+  document.getElementById('bh-out').textContent=[
+    `Myers-Perry d=${d}, M=${M.toFixed(1)}, a=${a.toFixed(2)}, G=1`,``,
+    `Mass parameter μ = ${mu.toFixed(5)}`,`Horizon radius r_H = ${rH.toFixed(6)}`,
+    `Horizon area A_H = ${aH.toFixed(4)}`,`Ω_ZAMO at r_H = ${zamo.toFixed(6)}`,``,
+    `Gregory-Laflamme:`,`  k_GL = 2π/r_H = ${kGL.toFixed(4)}`,
+    `  Modes k < k_GL are unstable`,``,
+    `Hyper-Kähler embedding:`,`  Q = (r_H, μ, A_H, Ω_ZAMO) — one quaternion per spin value`,
+    `  ω_K dominates for azimuthal-dominated Ω_ZAMO`,
+  ].join('\n');
+}
+
+function qadd(a,b){return{q0:a.q0+b.q0,q1:a.q1+b.q1,q2:a.q2+b.q2,q3:a.q3+b.q3};}
+function qsub(a,b){return{q0:a.q0-b.q0,q1:a.q1-b.q1,q2:a.q2-b.q2,q3:a.q3-b.q3};}
+function qmul(a,b){return{q0:a.q0*b.q0-a.q1*b.q1-a.q2*b.q2-a.q3*b.q3,q1:a.q0*b.q1+a.q1*b.q0+a.q2*b.q3-a.q3*b.q2,q2:a.q0*b.q2-a.q1*b.q3+a.q2*b.q0+a.q3*b.q1,q3:a.q0*b.q3+a.q1*b.q2-a.q2*b.q1+a.q3*b.q0};}
+function qconj(a){return{q0:a.q0,q1:-a.q1,q2:-a.q2,q3:-a.q3};}
+function qnorm(a){return sqrt(a.q0**2+a.q1**2+a.q2**2+a.q3**2);}
+function qHerm(u,v){return u.reduce((s,a,i)=>qadd(s,qmul(qconj(a),v[i])),{q0:0,q1:0,q2:0,q3:0});}
+function omegaI(u,v){return qHerm(u,v).q1;}
+function omegaJ(u,v){return qHerm(u,v).q2;}
+function omegaK(u,v){return qHerm(u,v).q3;}
+function hkDist(u,v){return sqrt(u.reduce((s,a,i)=>s+qnorm(qsub(a,v[i]))**2,0));}
+function chernI(pts){let s=0,n=pts.length;for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)s+=omegaI(pts[i].qv,pts[j].qv);return s;}
+function chernJ(pts){let s=0,n=pts.length;for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)s+=omegaJ(pts[i].qv,pts[j].qv);return s;}
+function chernK(pts){let s=0,n=pts.length;for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)s+=omegaK(pts[i].qv,pts[j].qv);return s;}
+const HK_DATASETS={
+  isco:ISCO_R.map((r,i)=>({label:i,qv:[{q0:r,q1:ISCO_T[i],q2:ISCO_THETA[i],q3:ISCO_PHI[i]}]})),
+  mp5:[{label:0,qv:[{q0:0.921318,q1:0.00,q2:15.436827,q3:0.0}]},{label:1,qv:[{q0:0.871106,q1:0.30,q2:14.595528,q3:0.153564}]},{label:2,qv:[{q0:0.699161,q1:0.60,q2:11.714558,q3:0.058866}]},{label:3,qv:[{q0:0.197044,q1:0.90,q2:3.301505,q3:0.001830}]}],
+  ring:[{label:0,qv:[{q0:0.1,q1:2*0.1/(1+0.01),q2:1.2223,q3:0.6428}]},{label:1,qv:[{q0:0.3,q1:2*0.3/(1+0.09),q2:12.6156,q3:0.5417}]},{label:2,qv:[{q0:0.5,q1:2*0.5/(1+0.25),q2:39.9493,q3:0.4564}]},{label:3,qv:[{q0:0.7,q1:2*0.7/(1+0.49),q2:100.2767,q3:0.3626}]},{label:4,qv:[{q0:0.9,q1:2*0.9/(1+0.81),q2:371.4256,q3:0.2182}]}],
+  mp6a:[{label:0,qv:[{q0:0.3,q1:1.0,q2:0.1,q3:0.0},{q0:0.245978,q1:0.300,q2:3.000,q3:0.0}]},{label:1,qv:[{q0:0.15,q1:2.0,q2:0.1,q3:0.0},{q0:0.245978,q1:0.075,q2:1.500,q3:0.0}]},{label:2,qv:[{q0:0.05,q1:5.0,q2:0.1,q3:0.0},{q0:0.245978,q1:0.010,q2:0.500,q3:0.0}]},{label:3,qv:[{q0:0.01,q1:10.0,q2:0.1,q3:0.0},{q0:0.245978,q1:0.001,q2:0.100,q3:0.0}]}],
+  mp6b:[{label:0,qv:[{q0:0.45,q1:0.5,q2:0.5,q3:0.0},{q0:0.245978,q1:0.900,q2:0.900,q3:0.0}]},{label:1,qv:[{q0:0.28,q1:1.0,q2:1.0,q3:0.0},{q0:0.245978,q1:0.280,q2:0.280,q3:0.0}]},{label:2,qv:[{q0:0.09,q1:2.0,q2:2.0,q3:0.0},{q0:0.245978,q1:0.045,q2:0.045,q3:0.0}]},{label:3,qv:[{q0:0.015,q1:5.0,q2:5.0,q3:0.0},{q0:0.245978,q1:0.003,q2:0.003,q3:0.0}]}],
+  mp6c:[{label:0,qv:[{q0:0.7816,q1:0.0,q2:0.0,q3:0.0},{q0:0.245978,q1:0.0,q2:0.0,q3:0.0}]},{label:1,qv:[{q0:0.4090,q1:1.0,q2:0.0,q3:0.0},{q0:0.245978,q1:0.409,q2:0.0,q3:0.0}]},{label:2,qv:[{q0:0.0048,q1:10.0,q2:0.0,q3:0.0},{q0:0.245978,q1:4.8e-4,q2:0.0,q3:0.0}]},{label:3,qv:[{q0:4.8e-5,q1:100.0,q2:0.0,q3:0.0},{q0:0.245978,q1:4.8e-7,q2:0.0,q3:0.0}]}],
+};
+const DS_LABELS={isco:'ISCO orbit (native Q)',mp5:'Myers-Perry d=5',ring:'Black ring',mp6a:'MP d=6 regime A (a1≫a2)',mp6b:'MP d=6 regime B (a1=a2)',mp6c:'MP d=6 regime C (a2=0)'};
+function runHK(){
+  let ds=document.getElementById('hk-ds').value,pts=HK_DATASETS[ds];
+  let ci=chernI(pts),cj=chernJ(pts),ck=chernK(pts);
+  document.getElementById('hk-ci').textContent=ci.toFixed(3);
+  document.getElementById('hk-cj').textContent=cj.toFixed(3);
+  document.getElementById('hk-ck').textContent=ck.toFixed(3);
+  let mx=Math.max(abs(ci),abs(cj),abs(ck),1e-9),bar=v=>{let n=Math.round(abs(v)/mx*16);return '#'.repeat(n)+'.'.repeat(16-n);};
+  let dominant=abs(ci)>abs(cj)&&abs(ci)>abs(ck)?'ω_I (radial KY)':abs(cj)>abs(ck)?'ω_J (polar KY)':'ω_K (azimuthal KY)';
+  let rIK=abs(ck)>1e-10?(ci/ck).toFixed(3):'∞',rJK=abs(ck)>1e-10?(cj/ck).toFixed(3):'∞';
+  let spinFP=abs(ck)<1e-8&&abs(cj)<1e-8?'single-spin (I only)':abs(ci-cj)<abs(ci)*0.2&&abs(ci-ck)<abs(ci)*0.2?'near SU(2) — equal spins':'I-dominant (a1≫a2)';
+  let nbs=pts.length>1?pts.slice(1).map(p=>({p,d:hkDist(pts[0].qv,p.qv)})).sort((a,b)=>a.d-b.d).slice(0,4):[];
+  document.getElementById('hk-out').textContent=[
+    `Hyper-Kähler analysis · ${DS_LABELS[ds]}`,`${pts.length} quaternionic points`,``,
+    `H = g + i·ω_I + j·ω_J + k·ω_K`,``,
+    `Chern proxies (discrete ∫ symplectic form):`,
+    `  ω_I [radial KY]   ${bar(ci)} ${ci.toFixed(4)}`,
+    `  ω_J [polar KY]    ${bar(cj)} ${cj.toFixed(4)}`,
+    `  ω_K [azimuthal]   ${bar(ck)} ${ck.toFixed(4)}`,``,
+    `Dominant form: ${dominant}`,`Spin fingerprint: ${spinFP}`,`cI/cK = ${rIK}   cJ/cK = ${rJK}`,``,
+    nbs.length?`Quaternionic nearest neighbours from t=0:\n`+nbs.map(n=>`  t=${n.p.label} dist=${n.d.toFixed(5)}`).join('\n'):'',
+  ].filter(Boolean).join('\n');
+}
+
+async function runAI(){
+  let key=document.getElementById('api-key').value.trim();
+  let q=document.getElementById('ai-q').value.trim();
+  let err=document.getElementById('ai-err');
+  if(!key){err.style.display='';err.textContent='Enter your Anthropic API key first.';return;}
+  if(!q){err.style.display='';err.textContent='Enter a question first.';return;}
+  err.style.display='none';
+  let btn=document.getElementById('ai-btn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Thinking…';
+  let out=document.getElementById('ai-out');out.textContent='';
+  const sys=`You are an expert in mathematical physics and differential geometry, helping explore a 5-layer Haskell "augmented vector space" stack:
+
+Layer 0 (avsp): ℝⁿ lag-augmented vectors; kNN (L2+cosine), OLS, Shannon entropy, anomaly detection.
+Layer 1 (kahler-ts): ℂ^(n/2) via complexification; Hermitian H=g+iω; Chern proxy Σω(pᵢ,pⱼ); VR persistent H0/H1.
+Layer 2 (kahler_isco): Same Kähler layer applied to ISCO geodesic coordinates (r,t,θ,φ) in Schwarzschild geometry.
+Layer 3 (bh-phase-space): Myers-Perry (d≥5) horizons, black rings (d=5), Gregory-Laflamme instability, ZAMO frame dragging.
+Layer 4 (hyper-kahler-hs): ℍ^(n/4) quaternions; three symplectic forms ω_I/ω_J/ω_K; Killing-Yano correspondence; multi-spin d=6 fingerprinting.
+
+Key insight: each ISCO step (r,t,θ,φ) = one quaternion natively. ω_I,ω_J,ω_K correspond to Killing-Yano tensors Ω_I,Ω_J,Ω_K of Myers-Perry geometry.
+
+Be concise, precise, and mathematical.`;
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:sys,messages:[{role:'user',content:q}]})
+    });
+    const data=await resp.json();
+    if(data.error){out.textContent='API error: '+data.error.message;}
+    else{out.textContent=data.content?.map(c=>c.text||'').join('')||'No response.';}
+  }catch(e){out.textContent='Error: '+e.message;}
+  btn.disabled=false;btn.textContent='Ask Claude ↗';
+}
+</script>
+</body>
+</html>
