@@ -307,7 +307,6 @@ function shannonEntropy(xs){
   xs.forEach(v=>{let i=Math.min(bins-1,Math.floor((v-mn)/rng*bins));counts[i]++;});
   return -counts.reduce((s,c)=>{let p=c/n;return s+(p>0?p*Math.log2(p):0);},0);
 }
-function lagFeats(p,xs){let r=[];for(let i=p-1;i<xs.length;i++)r.push({idx:i,lags:xs.slice(i-p+1,i+1).reverse()});return r;}
 function diffs(d,xs){if(!d)return xs;let r=[];for(let i=1;i<xs.length;i++)r.push(xs[i]-xs[i-1]);return diffs(d-1,r);}
 function rollingStats(w,xs){let r=[];for(let i=0;i<=xs.length-w;i++){let win=xs.slice(i,i+w),mu=win.reduce((a,b)=>a+b,0)/w,sigma=sqrt(win.reduce((a,v)=>a+(v-mu)**2,0)/w);r.push([mu,sigma]);}return r;}
 function augmentPoints(p,d,w,xs){
